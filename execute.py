@@ -115,17 +115,17 @@ def get_transcription(model_name):
         print(f"❌ Error processing audio: {e}")
         return None
 
-def run_command_with_text(text):
-    # Pipe the transcribed text to Claude CLI
+def run_interactive_claude_session(text):
+    # Start an interactive Claude session
     try:
-        # Use the full path to Claude CLI with appropriate arguments
+        # Use the full path to Claude CLI
         command = [
             "/Users/sebastianfabara/.claude/local/claude",
-            "--print"  # Non-interactive mode for piping
         ]
         
-        print(f"🚀 Sending to Claude: {text}")
+        print(f"🚀 Starting Claude session with: {text}")
         
+        # Start Claude as an interactive process
         claude_process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -138,19 +138,56 @@ def run_command_with_text(text):
         # Send the transcribed text to Claude
         claude_process.stdin.write(text + '\n')
         claude_process.stdin.flush()
+        
+        # Create threads to read from stdout and stderr
+        def read_stdout():
+            while True:
+                line = claude_process.stdout.readline()
+                if not line and claude_process.poll() is not None:
+                    break
+                if line:
+                    print(f"🤖 {line.strip()}")
+        
+        def read_stderr():
+            while True:
+                line = claude_process.stderr.readline()
+                if not line and claude_process.poll() is not None:
+                    break
+                if line:
+                    print(f"⚠️ {line.strip()}")
+        
+        # Start the reading threads
+        stdout_thread = threading.Thread(target=read_stdout)
+        stderr_thread = threading.Thread(target=read_stderr)
+        stdout_thread.daemon = True
+        stderr_thread.daemon = True
+        stdout_thread.start()
+        stderr_thread.start()
+        
+        # Main loop for user interaction with Claude
+        print("\n💬 You can now interact with Claude. Type your responses or 'exit' to quit this session.")
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() == 'exit':
+                break
+            
+            # Send user input to Claude
+            claude_process.stdin.write(user_input + '\n')
+            claude_process.stdin.flush()
+        
+        # Clean up the Claude process
         claude_process.stdin.close()
+        if claude_process.poll() is None:
+            claude_process.terminate()
+            claude_process.wait(timeout=2)
         
-        # Read and print Claude's response
-        print("📥 Claude's Response:")
-        for line in claude_process.stdout:
-            print(f"🤖 {line.strip()}")
-        
-        claude_process.wait()
-        
+        print("Claude session ended.")
+        return True
     except Exception as e:
-        print(f"❌ Error sending to Claude: {e}")
+        print(f"❌ Error in Claude session: {e}")
+        return False
 
-if __name__ == "__main__":
+def main():
     print("🎤 Gemini Audio Transcription to Claude 🎤")
     
     # List available models
@@ -174,11 +211,67 @@ if __name__ == "__main__":
         selected_model = "models/gemini-1.5-pro"
         print(f"\nUsing default model: {selected_model}")
     
-    print("\nPress Enter to start recording (press Enter again to stop)...")
-    input()  # Wait for Enter to start recording
-    
-    print("Recording started!")
-    transcribed_text = get_transcription(selected_model)
-    
-    if transcribed_text:
-        run_command_with_text(transcribed_text)
+    while True:
+        print("\n--- New Session ---")
+        print("Options:")
+        print("1: Record audio and send to Claude")
+        print("2: Type text directly to Claude")
+        print("3: Change Gemini model")
+        print("4: Exit program")
+        
+        try:
+            option = int(input("\nSelect an option (1-4): "))
+            
+            if option == 1:
+                # Record and transcribe audio
+                print("\nPress Enter to start recording (press Enter again to stop)...")
+                input()
+                print("Recording started!")
+                transcribed_text = get_transcription(selected_model)
+                
+                if transcribed_text:
+                    run_interactive_claude_session(transcribed_text)
+            
+            elif option == 2:
+                # Type text directly
+                text = input("\nEnter text to send to Claude: ")
+                if text:
+                    run_interactive_claude_session(text)
+            
+            elif option == 3:
+                # Change model
+                print("Listing available models...")
+                model_names = list_available_models()
+                
+                if model_names:
+                    while True:
+                        try:
+                            choice = int(input("\nEnter the number of the model you want to use: "))
+                            if 1 <= choice <= len(model_names):
+                                selected_model = model_names[choice-1]
+                                print(f"\nYou selected: {selected_model}")
+                                break
+                            else:
+                                print(f"Please enter a number between 1 and {len(model_names)}")
+                        except ValueError:
+                            print("Please enter a valid number")
+                else:
+                    print("Could not list models. Using default model.")
+                    selected_model = "models/gemini-1.5-pro"
+            
+            elif option == 4:
+                # Exit program
+                print("Exiting program. Goodbye!")
+                break
+            
+            else:
+                print("Invalid option. Please select 1-4.")
+        
+        except ValueError:
+            print("Please enter a valid number.")
+        except KeyboardInterrupt:
+            print("\nProgram interrupted. Exiting...")
+            break
+
+if __name__ == "__main__":
+    main()
