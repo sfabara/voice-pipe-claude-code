@@ -1,59 +1,69 @@
-# Voice to Claude
+# Voice-to-Text-to-Claude Conversation
 
-A Python application that uses Gemini API for speech-to-text transcription and sends the transcribed text to the Claude CLI for processing.
+A powerful tool that allows you to speak to Claude AI using voice input. This application uses Google's Gemini models for speech transcription and connects to the Claude CLI for a seamless voice-to-text-to-AI experience.
 
 ## Features
 
-- Records audio from your microphone
-- Transcribes the audio using Google's Gemini API 
-- Sends the transcription to Claude CLI and allows interactive conversation
-- Supports choosing from available Gemini models
-- Provides a menu-driven interface for multiple operations
+- 🎤 **Voice Input**: Record your voice and have it transcribed to text
+- 💬 **Direct Claude Interaction**: Send text or voice input directly to Claude
+- 🔍 **Detailed Logging**: Comprehensive logging to track communication flow
+- 🔄 **Non-blocking I/O**: Efficient handling of Claude's input/output streams
+- 🛠️ **Debug Mode**: Built-in debugging capabilities with the `/debug` command
 
 ## Requirements
 
-- Python 3.x
-- Google AI API key (set as GOOGLE_API_KEY environment variable)
-- Claude CLI installed (at ~/.claude/local/claude)
-- PyAudio
-- NumPy
-- google-generativeai Python library
+- Python 3.6+
+- Google API key (for Gemini models)
+- Claude CLI installed locally
 
-## Installation
+## Setup
 
-```bash
-# Install required packages
-pip install google-generativeai pyaudio numpy
-```
+1. Clone this repository
+2. Install the required dependencies:
+   ```
+   pip install google-generativeai pyaudio numpy
+   ```
+3. Set up your Google API key as an environment variable:
+   ```
+   export GOOGLE_API_KEY="your_google_api_key"
+   ```
+4. Make sure the Claude CLI is installed and the path in the script matches your installation path
 
 ## Usage
 
-1. Run the script:
-```bash
+Run the application:
+```
 python execute.py
 ```
 
-2. The script will:
-   - List available Gemini models
-   - Prompt you to select a model for transcription
-   - Present a menu with options:
-     1. Record audio and send to Claude
-     2. Type text directly to Claude
-     3. Change Gemini model
-     4. Exit program
+### Available Commands
 
-3. When recording audio:
-   - Press Enter to start recording
-   - Press Enter again to stop recording
-   - Audio will be transcribed using the selected Gemini model
-   - Transcription will be sent to Claude for processing
+- Type your message to interact with Claude
+- `/voice` - Switch to voice input mode
+- `/debug` - Display debugging information about the connection
+- `/exit` - End the session
 
-4. During a Claude session:
-   - Type your responses to Claude
-   - Type 'exit' to end the Claude session and return to the main menu
+## Troubleshooting
 
-## Notes
+If you experience issues with Claude's output not displaying correctly:
 
-- The speech recognition works best in quiet environments with clear speech
-- For transcription, models that support audio (like gemini-1.5-pro) are recommended
-- The Claude session is fully interactive - you can continue the conversation as needed
+1. Use the `/debug` command to check process status
+2. Verify Claude CLI path is correct for your system
+3. Check logs for detailed error information
+4. Ensure Claude CLI is installed and working independently
+
+## Architecture
+
+This tool works by:
+1. Using Google's Gemini model to transcribe voice to text
+2. Managing a subprocess that runs the Claude CLI
+3. Setting up non-blocking I/O for efficient communication
+4. Providing a clean, interactive interface for seamless conversations
+
+## Advanced Debugging
+
+The tool includes comprehensive logging at various levels:
+- Process startup and connection verification
+- Input/output stream monitoring
+- Claude process health checking
+- Input/output buffering and error handling
